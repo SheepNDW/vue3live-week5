@@ -1,18 +1,308 @@
 <template>
-  <div class="home">
-    <img alt="Vue logo" src="../assets/logo.png">
-    <HelloWorld msg="Welcome to Your Vue.js App"/>
+  <div class="container">
+    <div class="mt-4">
+      <!-- 產品Modal -->
+      <ProductModal
+        :id="productId"
+        ref="productModalCom"
+        @add-cart="addToCart"
+      />
+      <!-- 產品Modal -->
+      <table class="table align-middle">
+        <thead>
+          <tr>
+            <th>圖片</th>
+            <th>商品名稱</th>
+            <th>價格</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="product in products" :key="product.id">
+            <td style="width: 200px">
+              <div
+                :style="{ backgroundImage: `url(${product.imageUrl})` }"
+                style="
+                  width: 100px;
+                  height: 150px;
+                  background-size: cover;
+                  background-position: center;
+                "
+              ></div>
+            </td>
+            <td>{{ product.title }}</td>
+            <td>
+              <div v-if="product.price === product.origin_price" class="h5">
+                {{ product.price }} 元
+              </div>
+              <div v-else>
+                <del class="h6">原價 {{ product.origin_price }} 元</del>
+                <div class="h5">現在只要 {{ product.price }} 元</div>
+              </div>
+            </td>
+            <td>
+              <div class="btn-group btn-group-sm">
+                <button
+                  type="button"
+                  class="btn btn-outline-secondary"
+                  @click="openProductModal(product.id)"
+                  :disabled="isLoadingItem === product.id"
+                >
+                  查看更多
+                </button>
+                <button
+                  type="button"
+                  class="btn btn-danger"
+                  @click="addToCart(product.id)"
+                  :disabled="isLoadingItem === product.id"
+                >
+                  <span
+                    class="spinner-grow spinner-grow-sm"
+                    v-show="isLoadingItem === product.id"
+                  ></span>
+                  加到購物車
+                </button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+      <!-- 購物車列表 -->
+      <div class="text-end">
+        <button class="btn btn-outline-danger" type="button">清空購物車</button>
+      </div>
+      <table class="table align-middle">
+        <thead>
+          <tr>
+            <th></th>
+            <th>品名</th>
+            <th style="width: 150px">數量/單位</th>
+            <th>單價</th>
+          </tr>
+        </thead>
+        <tbody>
+          <template v-if="cartData?.carts">
+            <tr v-for="item in cartData.carts" :key="item.id">
+              <td>
+                <button
+                  @click="removeCartItem(item.id)"
+                  type="button"
+                  class="btn btn-outline-danger btn-sm"
+                >
+                  x
+                </button>
+              </td>
+              <td>
+                {{ item.product.title }}
+                <div class="text-success">已套用優惠券</div>
+              </td>
+              <td>
+                <div class="input-group input-group-sm">
+                  <div class="input-group mb-3">
+                    <!-- <input
+                      min="1"
+                      type="number"
+                      class="form-control"
+                      v-model="item.qty"
+                    /> -->
+                    <select
+                      id=""
+                      class="form-select"
+                      v-model="item.qty"
+                      @change="updateCartItem(item)"
+                      :disabled="isLoadingItem === item.id"
+                    >
+                      <option
+                        :value="num"
+                        v-for="num in 20"
+                        :key="`${num}${item.id}`"
+                      >
+                        {{ num }}
+                      </option>
+                    </select>
+                    <span class="input-group-text" id="basic-addon2">
+                      {{ item.product.unit }}
+                    </span>
+                  </div>
+                </div>
+              </td>
+              <td class="text-end">
+                <!-- <small class="text-success">折扣價：</small> -->
+                NT${{ item.total }}
+              </td>
+            </tr>
+          </template>
+        </tbody>
+        <tfoot>
+          <tr>
+            <td colspan="3" class="text-end">總計</td>
+            <td class="text-end">{{ cartData?.total }}</td>
+          </tr>
+          <tr>
+            <td colspan="3" class="text-end text-success">折扣價</td>
+            <td class="text-end text-success">{{ cartData?.final_total }}</td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+    <div class="my-5 row justify-content-center">
+      <!-- <v-form ref="form" class="col-md-6" v-slot="{ errors }">
+          <div class="mb-3">
+            <label for="email" class="form-label">Email</label>
+            <v-field
+              id="email"
+              name="email"
+              type="email"
+              class="form-control"
+              :class="{ 'is-invalid': errors['email'] }"
+              placeholder="請輸入 Email"
+            ></v-field>
+            <error-message
+              name="email"
+              class="invalid-feedback"
+            ></error-message>
+          </div>
+
+          <div class="mb-3">
+            <label for="name" class="form-label">收件人姓名</label>
+            <v-field
+              id="name"
+              name="姓名"
+              type="text"
+              class="form-control"
+              :class="{ 'is-invalid': errors['姓名'] }"
+              placeholder="請輸入姓名"
+              rules="required"
+            ></v-field>
+            <error-message name="姓名" class="invalid-feedback"></error-message>
+          </div>
+
+          <div class="mb-3">
+            <label for="tel" class="form-label">收件人電話</label>
+            <v-field
+              id="tel"
+              name="電話"
+              type="text"
+              class="form-control"
+              :class="{ 'is-invalid': errors['電話'] }"
+              placeholder="請輸入電話"
+            ></v-field>
+            <error-message name="電話" class="invalid-feedback"></error-message>
+          </div>
+
+          <div class="mb-3">
+            <label for="address" class="form-label">收件人地址</label>
+            <v-field
+              id="address"
+              name="地址"
+              type="text"
+              class="form-control"
+              :class="{ 'is-invalid': errors['地址'] }"
+              placeholder="請輸入地址"
+              rules="required"
+            ></v-field>
+            <error-message name="地址" class="invalid-feedback"></error-message>
+          </div>
+
+          <div class="mb-3">
+            <label for="message" class="form-label">留言</label>
+            <textarea
+              id="message"
+              class="form-control"
+              cols="30"
+              rows="10"
+            ></textarea>
+          </div>
+          <div class="text-end">
+            <button type="submit" class="btn btn-danger">送出訂單</button>
+          </div>
+        </v-form> -->
+    </div>
   </div>
 </template>
 
 <script>
-// @ is an alias to /src
-import HelloWorld from '@/components/HelloWorld.vue'
-
+import { ref } from 'vue';
+import { getProducts } from '@/api/product';
+import { deleteCart, getCartList, insertCart, updateCart } from '@/api/cart';
+import ProductModal from '@/components/ProductModal.vue';
 export default {
   name: 'Home',
   components: {
-    HelloWorld
-  }
-}
+    ProductModal,
+  },
+  setup() {
+    // 調用getProduct獲取產品列表
+    const products = ref(null);
+    getProducts().then((data) => {
+      products.value = data.products;
+    });
+
+    // 獲取 productModal 元件並調用它的open方法
+    const productModalCom = ref(null);
+    const productId = ref('');
+    const openProductModal = (id) => {
+      productId.value = id;
+      productModalCom.value.open();
+    };
+
+    // 調用getCartList獲取購物車列表
+    const cartData = ref(null);
+    getCartList().then((res) => {
+      cartData.value = res.data;
+      console.log(cartData.value);
+    });
+
+    // 添加至購物車方法
+    const isLoadingItem = ref('');
+    const addToCart = (id, qty = 1) => {
+      isLoadingItem.value = id;
+      insertCart(id, qty).then((data) => {
+        console.log(data);
+        // 重新獲取購物車內容
+        getCartList().then((res) => {
+          cartData.value = res.data;
+        });
+        isLoadingItem.value = '';
+      });
+    };
+
+    // 刪除購物車中產品
+    const removeCartItem = (id) => {
+      isLoadingItem.value = id;
+      deleteCart(id).then(() => {
+        // 重新獲取購物車內容
+        getCartList().then((res) => {
+          cartData.value = res.data;
+        });
+        isLoadingItem.value = '';
+      });
+    };
+
+    // 更新購物車
+    const updateCartItem = (item) => {
+      isLoadingItem.value = item.id;
+      updateCart({ prodcutId: item.id, count: item.qty }).then((data) => {
+        console.log(data);
+        // 重新獲取購物車內容
+        getCartList().then((res) => {
+          cartData.value = res.data;
+        });
+        isLoadingItem.value = '';
+      });
+    };
+
+    return {
+      products,
+      openProductModal,
+      productModalCom,
+      productId,
+      cartData,
+      addToCart,
+      isLoadingItem,
+      removeCartItem,
+      updateCartItem,
+    };
+  },
+};
 </script>
