@@ -74,7 +74,14 @@
       />
       <!-- 購物車列表 -->
       <div class="text-end">
-        <button class="btn btn-outline-danger" type="button">清空購物車</button>
+        <button
+          @click="clearAllCarts"
+          class="btn btn-outline-danger"
+          type="button"
+          :disabled="cartData?.carts?.length === 0"
+        >
+          清空購物車
+        </button>
       </div>
       <table class="table align-middle">
         <thead>
@@ -224,7 +231,13 @@
 <script>
 import { ref } from 'vue';
 import { getProducts } from '@/api/product';
-import { deleteCart, getCartList, insertCart, updateCart } from '@/api/cart';
+import {
+  deleteAllCarts,
+  deleteCart,
+  getCartList,
+  insertCart,
+  updateCart,
+} from '@/api/cart';
 import ProductModal from '@/components/ProductModal';
 import Pagination from '@/components/Pagination';
 import CheckoutForm from '@/components/CheckoutForm';
@@ -263,7 +276,6 @@ export default {
     const cartData = ref(null);
     getCartList().then((res) => {
       cartData.value = res.data;
-      console.log(cartData.value);
     });
 
     // 添加至購物車方法
@@ -291,12 +303,18 @@ export default {
         isLoadingItem.value = '';
       });
     };
+    const clearAllCarts = () => {
+      deleteAllCarts().then(() => {
+        getCartList().then((res) => {
+          cartData.value = res.data;
+        });
+      });
+    };
 
     // 更新購物車
     const updateCartItem = (item) => {
       isLoadingItem.value = item.id;
       updateCart({ prodcutId: item.id, count: item.qty }).then((data) => {
-        console.log(data);
         // 重新獲取購物車內容
         getCartList().then((res) => {
           cartData.value = res.data;
@@ -317,6 +335,7 @@ export default {
       removeCartItem,
       updateCartItem,
       changePage,
+      clearAllCarts,
     };
   },
 };

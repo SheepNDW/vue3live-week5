@@ -29,6 +29,14 @@ export const deleteCart = (id) => {
 };
 
 /**
+ * 刪除所有購物車產品 (清空購物車)
+ * @returns Promise
+ */
+export const deleteAllCarts = () => {
+  return request(`/api/${path}/carts`, 'delete');
+};
+
+/**
  * 修改購物車產品數量
  * @param {String} prodcutId - 產品id
  * @param {Integer} count - 數量
