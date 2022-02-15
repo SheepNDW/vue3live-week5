@@ -67,6 +67,11 @@
           </tr>
         </tbody>
       </table>
+      <Pagination
+        v-if="pagination"
+        :pages="pagination"
+        @change-page="changePage"
+      />
       <!-- 購物車列表 -->
       <div class="text-end">
         <button class="btn btn-outline-danger" type="button">清空購物車</button>
@@ -77,7 +82,7 @@
             <th></th>
             <th>品名</th>
             <th style="width: 150px">數量/單位</th>
-            <th>單價</th>
+            <th class="col-md-2">單價</th>
           </tr>
         </thead>
         <tbody>
@@ -99,12 +104,6 @@
               <td>
                 <div class="input-group input-group-sm">
                   <div class="input-group mb-3">
-                    <!-- <input
-                      min="1"
-                      type="number"
-                      class="form-control"
-                      v-model="item.qty"
-                    /> -->
                     <select
                       id=""
                       class="form-select"
@@ -225,18 +224,29 @@
 import { ref } from 'vue';
 import { getProducts } from '@/api/product';
 import { deleteCart, getCartList, insertCart, updateCart } from '@/api/cart';
-import ProductModal from '@/components/ProductModal.vue';
+import ProductModal from '@/components/ProductModal';
+import Pagination from '@/components/Pagination';
 export default {
   name: 'Home',
   components: {
     ProductModal,
+    Pagination,
   },
   setup() {
     // 調用getProduct獲取產品列表
     const products = ref(null);
+    const pagination = ref(null);
     getProducts().then((data) => {
       products.value = data.products;
+      pagination.value = data.pagination;
     });
+
+    const changePage = (page) => {
+      getProducts(page).then((data) => {
+        products.value = data.products;
+        pagination.value = data.pagination;
+      });
+    };
 
     // 獲取 productModal 元件並調用它的open方法
     const productModalCom = ref(null);
@@ -294,6 +304,7 @@ export default {
 
     return {
       products,
+      pagination,
       openProductModal,
       productModalCom,
       productId,
@@ -302,6 +313,7 @@ export default {
       isLoadingItem,
       removeCartItem,
       updateCartItem,
+      changePage,
     };
   },
 };
