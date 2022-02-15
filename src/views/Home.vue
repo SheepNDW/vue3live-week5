@@ -145,6 +145,7 @@
       </table>
     </div>
     <div class="my-5 row justify-content-center">
+      <CheckoutForm />
       <!-- <v-form ref="form" class="col-md-6" v-slot="{ errors }">
           <div class="mb-3">
             <label for="email" class="form-label">Email</label>
@@ -226,11 +227,13 @@ import { getProducts } from '@/api/product';
 import { deleteCart, getCartList, insertCart, updateCart } from '@/api/cart';
 import ProductModal from '@/components/ProductModal';
 import Pagination from '@/components/Pagination';
+import CheckoutForm from '@/components/CheckoutForm';
 export default {
   name: 'Home',
   components: {
     ProductModal,
     Pagination,
+    CheckoutForm,
   },
   setup() {
     // 調用getProduct獲取產品列表
